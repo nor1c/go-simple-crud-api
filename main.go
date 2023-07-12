@@ -5,21 +5,25 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
+	"github.com/unrolled/secure"
+
+	route "github.com/nor1c/go-simple-crud-api/routes"
 )
 
 func main() {
 	InitRouter()
 }
 
-func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func Hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, World!")
 }
 
 func InitRouter() {
-	router := httprouter.New()
-	router.GET("/", Hello)
+	router := chi.NewRouter()
+	router.Get("/", Hello)
+	router.Mount("/customers", route.CustomerRoutes())
 
 	handler := middlewares(router)
 
@@ -36,7 +40,9 @@ func middlewares(handler http.Handler) http.Handler {
 		},
 	).Handler(handler)
 
-	fmt.Println("CORS works!")
+	handler = secure.New(secure.Options{
+		FrameDeny: true,
+	}).Handler(handler)
 
 	return handler
 }
