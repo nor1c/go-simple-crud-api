@@ -1,48 +1,24 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/rs/cors"
-	"github.com/unrolled/secure"
+	employee "go-crud/modules/employee"
 
-	route "github.com/nor1c/go-simple-crud-api/routes"
+	"github.com/gorilla/mux"
 )
 
 func main() {
-	InitRouter()
-}
+	r := mux.NewRouter()
 
-func Hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, World!")
-}
+	r.HandleFunc("/employees", employee.GetAll).Methods("GET")
+	r.HandleFunc("/employees/{id}", employee.View).Methods("GET")
+	r.HandleFunc("/employees", employee.AddEmployee).Methods("POST")
+	r.HandleFunc("/employees/{id}", employee.UpdateEmployee).Methods("PUT")
+	r.HandleFunc("/employees/{id}", employee.RemoveEmployee).Methods("DELETE")
 
-func InitRouter() {
-	router := chi.NewRouter()
-	router.Get("/", Hello)
-	router.Mount("/customers", route.CustomerRoutes())
-
-	handler := middlewares(router)
-
-	// serve and automatically print log if error occured
-	log.Fatal(http.ListenAndServe(":3000", handler))
-}
-
-func middlewares(handler http.Handler) http.Handler {
-	handler = cors.New(
-		cors.Options{
-			AllowedOrigins: []string{"http://localhost:5173"},
-			AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
-			Debug:          false,
-		},
-	).Handler(handler)
-
-	handler = secure.New(secure.Options{
-		FrameDeny: true,
-	}).Handler(handler)
-
-	return handler
+	err := http.ListenAndServe(":3000", r)
+	if err != nil {
+		panic(err.Error())
+	}
 }
